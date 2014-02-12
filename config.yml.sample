@@ -1,0 +1,16 @@
+# rename this file to config.yml
+bitcoin:
+  connection: 'http://username:password:port'
+  debug: false
+  clean_csv: false
+  show_header: false
+  block_start: 276970
+  monitor_address: '1ANGELwQwWxMmbdaSWhWLqBEtPTkWb8uDc'
+
+protoshare:
+  connection: 'http://username:password:port'
+  debug: false
+  clean_csv: false
+  show_header: false
+  block_start: 35450
+  monitor_address: 'PaNGELmZgzRQCKeEKM6ifgTqNkC4ceiAWw'
