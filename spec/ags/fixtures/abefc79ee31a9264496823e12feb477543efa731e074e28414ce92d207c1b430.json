@@ -1,0 +1,45 @@
+{
+    "hex" : "0100000001735e0d6acc52a58e33ec5992f62e7c6f99caa651e3d2d3b20ab0fae1ffd983ca1e0000006a4730440220049dccbae25b4a70d563316e45c135be60e714d6ad8a3e0645b855c23cd8440a0220687006444e07beeb7e131660614cf69a39b09137446e9cd4fa75174e731c0ac20121032a3555711be673effd43ec9bf89cd5baa1b73e530bfd7064c9e19fcf9f7a356affffffff024c494c00000000001976a9143fcb3517dbb78ff68348efc9ed6b8e55251f273988ac10ae9303000000001976a914ed98e11c1ad7f9d9d45f0f9bd16cdd7493a9a7bc88ac00000000",
+    "txid" : "abefc79ee31a9264496823e12feb477543efa731e074e28414ce92d207c1b430",
+    "version" : 1,
+    "locktime" : 0,
+    "vin" : [
+        {
+            "txid" : "ca83d9ffe1fab00ab2d3d2e351a6ca996f7c2ef69259ec338ea552cc6a0d5e73",
+            "vout" : 30,
+            "scriptSig" : {
+                "asm" : "30440220049dccbae25b4a70d563316e45c135be60e714d6ad8a3e0645b855c23cd8440a0220687006444e07beeb7e131660614cf69a39b09137446e9cd4fa75174e731c0ac201 032a3555711be673effd43ec9bf89cd5baa1b73e530bfd7064c9e19fcf9f7a356a",
+                "hex" : "4730440220049dccbae25b4a70d563316e45c135be60e714d6ad8a3e0645b855c23cd8440a0220687006444e07beeb7e131660614cf69a39b09137446e9cd4fa75174e731c0ac20121032a3555711be673effd43ec9bf89cd5baa1b73e530bfd7064c9e19fcf9f7a356a"
+            },
+            "sequence" : 4294967295
+        }
+    ],
+    "vout" : [
+        {
+            "value" : 0.04999500,
+            "n" : 0,
+            "scriptPubKey" : {
+                "asm" : "OP_DUP OP_HASH160 3fcb3517dbb78ff68348efc9ed6b8e55251f2739 OP_EQUALVERIFY OP_CHECKSIG",
+                "hex" : "76a9143fcb3517dbb78ff68348efc9ed6b8e55251f273988ac",
+                "reqSigs" : 1,
+                "type" : "pubkeyhash",
+                "addresses" : [
+                    "16pK1BbVMwyBZY5gfdh8QZzgmeddauYExU"
+                ]
+            }
+        },
+        {
+            "value" : 0.60010000,
+            "n" : 1,
+            "scriptPubKey" : {
+                "asm" : "OP_DUP OP_HASH160 ed98e11c1ad7f9d9d45f0f9bd16cdd7493a9a7bc OP_EQUALVERIFY OP_CHECKSIG",
+                "hex" : "76a914ed98e11c1ad7f9d9d45f0f9bd16cdd7493a9a7bc88ac",
+                "reqSigs" : 1,
+                "type" : "pubkeyhash",
+                "addresses" : [
+                    "1NfJHhxmQZPyaRMTBbf7inbh73qEKsZcC4"
+                ]
+            }
+        }
+    ]
+}

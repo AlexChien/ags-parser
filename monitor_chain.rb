@@ -21,6 +21,7 @@
 #
 # You should have received a copy of the GNU General Public License along with
 # this program. If not, see <http://www.gnu.org/licenses/>.
+$:.unshift( File.expand_path('./lib', File.dirname( __FILE__ )) )
 $:.unshift( File.dirname( __FILE__ ) )
 
 require 'json'
@@ -31,7 +32,7 @@ require 'net/http'
 require 'uri'
 require 'json'
 
-require 'bitcoin_rpc'
+require 'ags'
 
 ################################################################################
 # load from config file to get default value
@@ -92,7 +93,7 @@ else
   end
 end
 
-# PTS daemon connection
+# daemon connection
 @connection       = options[:connection] || @config[@network]["connection"]
 
 # Enable/Disable debugging output.
@@ -112,12 +113,12 @@ end
 
 ################################################################################
 
-@rpc = BitcoinRPC.new(@connection)
+@rpc = Ags::BitcoinRPC.new(@connection)
 
 # initializes global args
 @sum = 0.0
 @ags = 0
-@day = 1388620800
+@day = 1388620800 # 2014-01-02 00:00:00 UTC
 i=0
 
 ################################################################################
@@ -126,108 +127,9 @@ i=0
 $stdout.sync = true
 $stderr.sync = true
 
-@header = "\"BLOCK\";\"DATETIME\";\"TXBITS\";\"SENDER\";\"DONATION[#{@network_abbr}]\";\"DAYSUM[#{@network_abbr}]\";\"DAYRATE[AGS/#{@network_abbr}]\""
+@header = "BLOCK;DATETIME;TX;DONAR;DONATION[#{@network_abbr}];DAYSUM[#{@network_abbr}];DAYRATE[AGS/#{@network_abbr}];RELATED_ADDR"
 
 puts @header if @show_header
-
-# parses given transactions
-def parse_tx(hi=nil, time=nil, tx)
-
-  # gets transaction JSON data
-  jsontx = @rpc.getrawtransaction(tx, 1)
-
-  # check every transaction output
-  jsontx["vout"].each do |vout|
-
-    # gets recieving address and value
-    address = vout["scriptPubKey"]["addresses"]
-    value = vout["value"]
-
-    # checks addresses for being angelshares donation address
-    if not address.nil?
-      if address.include? @monitor_address
-
-        # display daily summary and split CSV data in days
-        while (time.to_i > @day.to_i) do
-
-          # disable summary output for clean CSV files
-          if not @clean_csv
-            puts "+++++ Day Total: #{@sum.round(8)} #{@network_abbr} (#{@ags.round(8)} AGS/#{@network_abbr}) +++++"
-            puts ""
-            puts "+++++ New Day : #{Time.at(@day.to_i).utc} +++++"
-            puts @header
-          end
-
-          # reset PTS sum and sitch day
-          @sum = 0.0
-          @day += 86400
-        end
-
-        # gets UTC timestamp
-        stamp = Time.at(time.to_i).utc
-
-        # checks each input for sender addresses
-        senderhash = Hash.new
-        jsontx['vin'].each do |vin|
-
-          # parses the sender from input txid and n
-          sendertx = vin['txid']
-          sendernn = vin['vout']
-
-          # gets transaction JSON data of the sender
-          senderjsontx = @rpc.getrawtransaction(sendertx, 1)
-
-          # scan sender transaction for sender address
-          senderjsontx["vout"].each do |sendervout|
-            if sendervout['n'].eql? sendernn
-
-              # gets angelshares sender address and input value
-              if senderhash[sendervout['scriptPubKey']['addresses'].first.to_s].nil?
-                senderhash[sendervout['scriptPubKey']['addresses'].first.to_s] = sendervout['value'].to_f
-              else
-                senderhash[sendervout['scriptPubKey']['addresses'].first.to_s] += sendervout['value'].to_f
-              end
-            end
-          end
-        end
-
-        # gets donation value by each input address of the transaction
-        outval = value
-        presum = 0.0
-        sumval = 0.0
-        senderhash.each do |key, inval|
-          printval = 0.0
-          sumval += inval
-          if sumval <= outval
-            printval = inval
-          else
-            printval = outval - presum
-          end
-
-          # prints donation stats if input value is above 0
-          if printval > 0
-
-            # sums up donated PTS value
-            @sum += printval
-
-            # calculates current angelshares ratio
-            @ags = 5000.0 / @sum
-
-            txbits = tx
-            puts "\"" + hi.to_s + "\";\"" + stamp.to_s + "\";\"" + txbits.to_s + "\";\"" + key.to_s + "\";\"" + printval.round(8).to_s + "\";\"" + @sum.round(8).to_s + "\";\"" + @ags.round(8).to_s + "\""
-          end
-          presum += inval
-        end
-      end
-    else
-
-      # debugging warning: transaction without output address
-      if @debug
-        $stderr.puts "!!!WARNG ADDRESS EMPTY #{vout.to_s}"
-      end
-    end
-  end
-end
 
 # starts parsing the blockchain in infinite loop
 while true do
@@ -239,54 +141,47 @@ while true do
   end
 
   # gets current block height
-  blockhigh = @rpc.getblockcount
+  block_high = @rpc.getblockcount
 
   #reads every block by block
-  (@blockstrt.to_i..blockhigh.to_i).each do |hi|
+  (@blockstrt.to_i..block_high.to_i).each do |hi|
     if @debug
       $stderr.puts "---DEBUG BLOCK #{hi}"
     end
 
-    # gets block hash string
-    blockhash = @rpc.getblockhash(hi)
+    block_info = Ags::Parser.parse_block(@rpc, hi, @monitor_address)
 
-    # gets JSON block data
-    blockinfo = @rpc.getblock(blockhash)
+    # display daily summary and split CSV data in days
+    while (block_info[:timestamp].to_i > @day.to_i) do
 
-    # gets block transactions & time
-    transactions = blockinfo['tx']
-    time = blockinfo['time']
-
-    # parses transactions ...
-    if not transactions.nil?
-      if not transactions.size <= 1
-        transactions.each do |tx|
-
-          # ... one by one
-          parse_tx(hi, time, tx)
-        end
-      else
-
-        # ... only one available
-        parse_tx(hi, time, transactions.first)
+      # disable summary output for clean CSV files
+      if not @clean_csv
+        @ags = 5000.0 / @sum
+        puts "+++++ Day Total: #{@sum.round(8)} #{@network_abbr} (#{@ags.round(8)} AGS/#{@network_abbr}) +++++"
+        puts ""
+        puts "+++++ New Day : #{Time.at(@day.to_i).utc} +++++"
+        puts @header
       end
-    else
 
-      # debugging warning: block without transactions
-      if @debug
-        $stderr.puts "!!!WARNG NO TRANSACTIONS IN BLOCK #{hi}"
-      end
+      # reset PTS sum and sitch day
+      @sum = 0.0
+      @day += 86400
+    end
+
+    # output donation info
+    unless block_info[:donation_transactions].empty?
+      puts block_info[:donation_transactions].collect{ |d|
+        @sum += d[:donation]
+        # insert sum and ags rate when donation
+        # maintain related address at last position
+        # to be compatible with old api
+        ( d.values.insert(-2,[@sum.round(8), (5000.0 / @sum).round(8)]) ).join(';')
+      }.join("\r\n")
     end
   end
 
-  # debugging output: current loop summary
-  if @debug
-    $stderr.puts "---DEBUG SUM #{@sum.round(8)}"
-    $stderr.puts "---DEBUG VALUE #{@ags.round(8)}"
-  end
-
   # resets starting block height to next unparsed block
-  @blockstrt = blockhigh.to_i + 1
+  @blockstrt = block_high.to_i + 1
   i += 1
 
   # wait for new blocks to appear
