@@ -79,7 +79,7 @@ optparse = OptionParser.new do |opts|
 end.parse!
 
 # check first argument which mandatory
-unless ARGV.any? && %w(bitcoin protoshare).include?(ARGV[0].downcase)
+unless ARGV.any? && %w(bitcoin protoshare music).include?(ARGV[0].downcase)
   puts "You must provide network (bitcoin|protoshare)"
   puts optparse
   exit
@@ -90,6 +90,8 @@ else
     'BTC'
   when 'protoshare'
     'PTS'
+  when 'music'
+    'MUSIC'
   end
 end
 
@@ -112,7 +114,6 @@ end
 @monitor_address  = @config[@network]["monitor_address"]
 
 ################################################################################
-
 @rpc = Ags::BitcoinRPC.new(@connection)
 
 # initializes global args
