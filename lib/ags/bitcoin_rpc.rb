@@ -13,6 +13,7 @@ module Ags
 
     def http_post_request(post_body)
       http    = Net::HTTP.new(@uri.host, @uri.port)
+      http.read_timeout = 500
       request = Net::HTTP::Post.new(@uri.request_uri)
       request.basic_auth @uri.user, @uri.password
       request.content_type = 'application/json'
